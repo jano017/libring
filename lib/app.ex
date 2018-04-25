@@ -10,7 +10,10 @@ defmodule HashRing.App do
     children = [
       worker(HashRing.Worker, [], restart: :transient)
     ]
-    {:ok, pid} = Supervisor.start_link(children, strategy: :simple_one_for_one, name: HashRing.Supervisor)
+    pid = case Supervisor.start_link(children, strategy: :simple_one_for_one, name: HashRing.Supervisor) do
+      {:ok, pid} -> pid
+      {:error, {:already_started, pid}} -> pid
+    end
 
     # Add any preconfigured rings
     Enum.each(Application.get_env(:libring, :rings, []), fn
