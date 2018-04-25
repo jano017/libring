@@ -18,10 +18,10 @@ defmodule HashRing.App do
     # Add any preconfigured rings
     Enum.each(Application.get_env(:libring, :rings, []), fn
       {name, config} ->
-        {:ok, _pid} = HashRing.Managed.new(name, config)
+        {:ok, _pid} = HashRing.Managed.get(name, config)
         Logger.info "[libring] started managed ring #{inspect name}"
       name when is_atom(name) ->
-        {:ok, _pid} = HashRing.Managed.new(name)
+        {:ok, _pid} = HashRing.Managed.get(name)
         Logger.info "[libring] started managed ring #{inspect name}"
     end)
 

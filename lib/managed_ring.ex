@@ -91,6 +91,48 @@ defmodule HashRing.Managed do
   end
 
   @doc """
+  Gets or starts a stateful hash ring with the given name.
+  This name is how you will refer to the hash ring via other API calls.
+
+  It takes an optional set of options which control how the ring behaves.
+  Valid options are as follows:
+
+  - `monitor_nodes: boolean`: will automatically monitor Erlang node membership,
+    if new nodes are connected or nodes are disconnected, the ring will be updated automatically.
+    In this configuration, nodes cannot be added or removed via the API. Those requests will be ignored.
+  - `node_blacklist: [String.t | Regex.t]`: Used in conjunction with `monitor_nodes: true`, this
+    is a list of patterns, either as literal strings, or as regex patterns (in either string or literal form),
+    and will be used to ignore nodeup/down events for nodes which are blacklisted. If a node whitelist
+    is provided, the blacklist has no effect.
+  - `node_whitelist: [String.t | Regex.t]`: The same as `node_blacklist`, except the opposite; only nodes
+    which match a pattern in the whitelist will result in the ring being updated.
+
+  An error is returned if bad ring options are provided.
+
+  ## Examples
+
+      iex> {:ok, _pid} = HashRing.Managed.new(:test1, [nodes: ["a", {"b", 64}]])
+      ...> HashRing.Managed.key_to_node(:test1, :foo)
+      "b"
+
+      iex> {:ok, pid} = HashRing.Managed.new(:test2)
+      ...> {:ok, existing_pid} = HashRing.Managed.new(:test2)
+      ...> pid == existing_pid
+      true
+      iex> HashRing.Managed.new(:test3, [nodes: "a"])
+      ** (ArgumentError) {:nodes, "a"} is an invalid option for `HashRing.Managed.new/2`
+  """
+  @spec get(ring) :: {:ok, pid} | {:error, {:already_started, pid}}
+  @spec get(ring, ring_options) :: {:ok, pid} | {:error, {:already_started, pid}} | {:error, {:invalid_option, term}}
+  def get(name, ring_options \\ []) when is_list(ring_options) do
+    case new(name, ring_options) do
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:already_started, pid}} -> {:ok, pid}
+      err -> err
+    end
+  end
+
+  @doc """
   Same as `HashRing.nodes/1`, returns a list of nodes on the ring.
 
   ## Examples
